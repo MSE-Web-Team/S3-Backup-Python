@@ -45,6 +45,24 @@ def generateUploadedFilename(args):
 
     return filename
 
+def deleteOldFiles(s3, args):
+    if not args.keep_old:
+        expiration_threshold = (getCurrentDatetime() - timedelta(days=32)).timestamp()
+
+        response = s3.meta.client.list_objects(Bucket=args.bucket)
+
+        removalQueue = []
+
+        for object in response['Contents']:
+            modified = object['LastModified']
+            filename = object['Key']
+
+            if modified.timestamp() < expiration_threshold:
+                removalQueue.append(filename)
+
+        for file in removalQueue:
+            s3.meta.client.delete_object(Bucket=args.bucket, Key=file)
+
 def uploadFile(s3, args):
     #init multipart upload
     filename = generateUploadedFilename(args)
@@ -76,7 +94,7 @@ def uploadFile(s3, args):
                 PartNumber=i+1,
                 UploadId=upload_id
             )
-            
+
             parts.append({'PartNumber':i+1, 'ETag': mp['ETag']})
     
     s3.meta.client.complete_multipart_upload(
@@ -94,19 +112,4 @@ s3 = getS3Client()
 
 uploadFile(s3, args)
 
-#if not args.keep_old:
-#    expiration_threshold = (getCurrentDatetime() - timedelta(days=32)).timestamp()
-#    
-#    response = s3.meta.client.list_objects(Bucket=bucket)
-#
-#    removalQueue = []
-#
-#    for object in response['Contents']:
-#        modified = object['LastModified']
-#        filename = object['Key']
-#
-#        if modified.timestamp() < expiration_threshold:
-#            removalQueue.append(filename)
-#
-#    for file in removalQueue:
-#        s3.meta.client.delete_object(Bucket=bucket, Key=file)
+deleteOldFiles(s3, args)
