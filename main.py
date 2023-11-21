@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 from datetime import datetime, timedelta
 import argparse
 from pathlib import Path
+from tqdm import tqdm
   
 load_dotenv()
 
@@ -79,8 +80,9 @@ def uploadFile(s3, args):
 
     parts = []
 
+    print("Uploading: {}\n".format(args.file))
     with open(args.file, 'rb') as f:
-        for i in range(chunks_count):
+        for i in tqdm(range(chunks_count)):
             offset = file_chunk_size * i
             bytes = min(file_chunk_size, filesize - offset)
             
