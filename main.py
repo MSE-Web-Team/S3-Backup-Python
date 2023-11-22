@@ -28,7 +28,7 @@ def getArgs():
     parser.add_argument("-f", "--file", help="specify file to upload", required=True)
     parser.add_argument("-b", "--bucket", help="specify aws bucket to upload to", required=True)
     parser.add_argument("-k", "--keep_old", help="instruct to keep old files", action="store_true")
-    parser.add_argument("-d", "--dir", help="generate a directory to store file in")
+    parser.add_argument("-d", "--dir", help="generate a directory to store file in", action='store_true')
 
     return parser.parse_args()
 
