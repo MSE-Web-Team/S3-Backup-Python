@@ -80,7 +80,6 @@ def uploadFile(s3, args):
 
     parts = []
 
-    print("Uploading: {}\n".format(args.file))
     with open(args.file, 'rb') as f:
         for i in tqdm(range(chunks_count)):
             offset = file_chunk_size * i
