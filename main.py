@@ -3,11 +3,19 @@
 import boto3 
 import os
 import math
+import sys
 from dotenv import load_dotenv
 from datetime import datetime, timedelta
 import argparse
 from pathlib import Path
 from tqdm import tqdm
+import warnings
+
+warnings.filterwarnings('ignore')
+
+sys.path.append('./cron-job-tracker')
+
+import job as cron_job_tracker
   
 load_dotenv()
 
@@ -29,6 +37,7 @@ def getArgs():
     parser.add_argument("-b", "--bucket", help="specify aws bucket to upload to", required=True)
     parser.add_argument("-k", "--keep_old", help="instruct to keep old files", action="store_true")
     parser.add_argument("-d", "--dir", help="generate a directory to store file in", action='store_true')
+    parser.add_argument("-r", "--report_progress", help="report progress to dashboard")
 
     return parser.parse_args()
 
@@ -105,12 +114,18 @@ def uploadFile(s3, args):
         MultipartUpload={ 'Parts': parts }
     )
 
-
+API_PATH = "https://msedev7.byu.edu/api/jobs"
 
 args = getArgs()
 
 s3 = getS3Client()
 
+if args.report_progress and len(args.report_progress) > 0:
+    cron_job_tracker.create_job(args.report_progress, API_PATH)
+
 uploadFile(s3, args)
 
 deleteOldFiles(s3, args)
+
+if args.report_progress and len(args.report_progress) > 0:
+    cron_job_tracker.update_job_status(args.report_progress, API_PATH)
