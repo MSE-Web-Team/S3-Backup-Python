@@ -123,9 +123,14 @@ s3 = getS3Client()
 if args.report_progress and len(args.report_progress) > 0:
     cron_job_tracker.create_job(args.report_progress, API_PATH)
 
-uploadFile(s3, args)
+try:
+    uploadFile(s3, args)
 
-deleteOldFiles(s3, args)
+    deleteOldFiles(s3, args)
 
-if args.report_progress and len(args.report_progress) > 0:
-    cron_job_tracker.update_job_status(args.report_progress, API_PATH)
+    if args.report_progress and len(args.report_progress) > 0:
+        cron_job_tracker.update_job_status(args.report_progress, API_PATH)
+except:
+    print(f"Upload failed")
+    if args.report_progress and len(args.report_progress) > 0:
+        cron_job_tracker.update_job_status(args.report_progress, API_PATH, status="ERROR")
