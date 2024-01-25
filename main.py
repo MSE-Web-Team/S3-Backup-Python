@@ -19,6 +19,8 @@ import job as cron_job_tracker
   
 load_dotenv()
 
+API_PATH = os.getenv("DASHBOARD_URL")
+
 def getCurrentDatetime():
     return datetime.now()
 
@@ -73,6 +75,14 @@ def deleteOldFiles(s3, args):
         for file in removalQueue:
             s3.meta.client.delete_object(Bucket=args.bucket, Key=file)
 
+def startCronJob(report_progress):
+    if report_progress and len(report_progress) > 0:
+        cron_job_tracker.create_job(report_progress, API_PATH)
+
+def updateCronJob(report_progress, status = "SUCCESS"):
+    if report_progress and len(report_progress) > 0:
+        cron_job_tracker.update_job_status(report_progress, API_PATH, status)
+
 def uploadFile(s3, args):
     #init multipart upload
     filename = generateUploadedFilename(args)
@@ -114,23 +124,19 @@ def uploadFile(s3, args):
         MultipartUpload={ 'Parts': parts }
     )
 
-API_PATH = "https://msedev7.byu.edu/api/jobs"
 
 args = getArgs()
 
 s3 = getS3Client()
 
-if args.report_progress and len(args.report_progress) > 0:
-    cron_job_tracker.create_job(args.report_progress, API_PATH)
+startCronJob(args.report_progress)
 
 try:
     uploadFile(s3, args)
 
     deleteOldFiles(s3, args)
 
-    if args.report_progress and len(args.report_progress) > 0:
-        cron_job_tracker.update_job_status(args.report_progress, API_PATH)
+    updateCronJob(args.report_progress)
 except:
     print(f"Upload failed")
-    if args.report_progress and len(args.report_progress) > 0:
-        cron_job_tracker.update_job_status(args.report_progress, API_PATH, status="ERROR")
+    updateCronJob(args.report_progress, status = "ERROR")
